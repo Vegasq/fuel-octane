@@ -20,7 +20,7 @@ SKIP_TASKS = ["upload_cirros", "ceph_ready_check", "configure_default_route"]
 
 # Prevents Contrail plugin from creating default networks
 SKIP_CONTRAIL_TASKS = ["controller-hiera-pre", "controller-hiera-post",
-                       "openstack-controller-provision"]
+                       "openstack-controller-provision", "controller-aggregate"]
 
 
 def get_parser():

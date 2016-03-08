@@ -25,6 +25,8 @@ from octane.util import node as node_util
 from octane.util import plugin
 from octane.util import ssh
 
+from requests.exceptions import HTTPError
+
 LOG = logging.getLogger(__name__)
 
 
@@ -80,12 +82,25 @@ class ControllerUpgrade(upgrade.UpgradeHandler):
 
         tasks = self.env.get_deployment_tasks()
         tasks_helpers.skip_tasks(tasks)
-        self.env.update_deployment_tasks(tasks)
+        try:
+            self.env.update_deployment_tasks(tasks)
+        except HTTPError as err:
+            LOG.error("Update deployment tasks failed.")
+            LOG.error("Tasks: %s" % tasks)
+            LOG.error(getattr(err, 'response', 'response not found'))
+            raise
 
         if plugin.is_contrail_plugin_enabled(self.env):
             tasks = self.env.get_deployment_tasks()
             tasks_helpers.skip_tasks(tasks, tasks_helpers.SKIP_CONTRAIL_TASKS)
-            self.env.update_deployment_tasks(tasks)
+            try:
+                self.env.update_deployment_tasks(tasks)
+            except HTTPError as err:
+                LOG.error("Update deployment tasks with contrail taste failed.")
+                LOG.error("Tasks: %s" % tasks)
+                LOG.error(err.response.text)
+                import pdb; pdb.set_trace()
+                raise
 
     def postdeploy(self):
         # From neutron_update_admin_tenant_id
