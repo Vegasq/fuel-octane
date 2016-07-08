@@ -17,6 +17,8 @@ from octane.helpers import transformations
 
 
 SKIP_TASKS = ["upload_cirros", "ceph_ready_check", "configure_default_route"]
+SKIP_OS_NETWORKS_TASKS = ["openstack-network-networks",
+                          "openstack-network-routers"]
 
 
 def get_parser():
@@ -34,7 +36,9 @@ def get_parser():
     return parser
 
 
-def skip_tasks(tasks_config):
+def skip_tasks(tasks_config, tasks_to_skip=None):
+    if not tasks_to_skip:
+        tasks_to_skip = SKIP_TASKS
 
     def skip_task(tasks_config, task_id):
         for task in tasks_config:
@@ -48,7 +52,7 @@ def skip_tasks(tasks_config):
                 tasks_config.remove(task)
         return tasks_config
 
-    for task_id in SKIP_TASKS:
+    for task_id in tasks_to_skip:
         tasks_config = skip_task(tasks_config, task_id)
     return tasks_config
 

@@ -22,7 +22,10 @@ from octane.helpers import transformations
 from octane import magic_consts
 from octane.util import env as env_util
 from octane.util import node as node_util
+from octane.util import plugin
 from octane.util import ssh
+
+from requests.exceptions import HTTPError
 
 LOG = logging.getLogger(__name__)
 
@@ -80,7 +83,23 @@ class ControllerUpgrade(upgrade.UpgradeHandler):
 
         tasks = self.env.get_deployment_tasks()
         tasks_helpers.skip_tasks(tasks)
-        self.env.update_deployment_tasks(tasks)
+        try:
+            self.env.update_deployment_tasks(tasks)
+        except HTTPError as err:
+            LOG.error("Update deployment tasks failed with %s." %
+                      err.response.text)
+            raise
+
+        if plugin.do_we_need_to_skip_networks(self.env):
+            tasks = self.env.get_deployment_tasks()
+            tasks_helpers.skip_tasks(tasks,
+                                     tasks_helpers.SKIP_OS_NETWORKS_TASKS)
+            try:
+                self.env.update_deployment_tasks(tasks)
+            except HTTPError as err:
+                LOG.error("Update deployment tasks failed with %s." %
+                          err.response.text)
+                raise
 
     def postdeploy(self):
         # From neutron_update_admin_tenant_id

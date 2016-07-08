@@ -10,20 +10,16 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import json
 
-def is_installed(env, plugin_name):
-    settings = env.get_settings_data()
-    if plugin_name in settings['editable']:
-        return True
-    return False
+from octane.util import subprocess
 
 
-def is_enabled(env, plugin_name):
-    settings = env.get_settings_data()
-    if plugin_name not in settings['editable']:
-        return False
-    return settings['editable'][plugin_name]['metadata']['enabled']
+def get_not_active_images_uuids():
+    fuel_bootstrap_list = ["fuel-bootstrap", "list", "--format", "json"]
+    images = json.loads(subprocess.call_output(fuel_bootstrap_list))
+    return [img["uuid"] for img in images if img["status"] != "active"]
 
 
-def do_we_need_to_skip_networks(env):
-    return True
+def delete_image(uuid):
+    subprocess.call(["fuel-bootstrap", "delete", uuid])
